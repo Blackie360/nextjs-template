@@ -18,7 +18,7 @@ export const Footer = () => {
           <div className="mt-12 border-t pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="flex items-center space-x-4">
-                <span className="text-xl font-bold text-primary">SaaSLogo</span>
+                <span className="text-xl font-bold text-primary">Aura</span>
                 <span className="text-gray-500">&copy; 2024 All rights reserved.</span>
               </div>
               <div className="flex space-x-6 mt-4 md:mt-0">
