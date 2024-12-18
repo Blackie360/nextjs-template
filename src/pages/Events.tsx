@@ -25,20 +25,12 @@ const Events = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch all public events and events user is part of
   const { data: events, isLoading } = useQuery({
     queryKey: ['events'],
     queryFn: async () => {
-      // First get all events
       const { data: eventsData, error: eventsError } = await supabase
         .from('events')
-        .select(`
-          *,
-          event_rsvps (
-            user_id,
-            status
-          )
-        `)
+        .select('*')
         .order('start_time', { ascending: true });
 
       if (eventsError) {
@@ -54,37 +46,33 @@ const Events = () => {
     }
   });
 
-  // Fetch events created by the user
-  const { data: organizedEvents } = useQuery({
-    queryKey: ['organized-events', userId],
-    queryFn: async () => {
-      if (!userId) return [];
-      const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .eq('creator_id', userId)
-        .order('start_time', { ascending: true });
-
-      if (error) {
-        toast({
-          title: "Error fetching organized events",
-          description: error.message,
-          variant: "destructive",
-        });
-        return [];
-      }
-
-      return data;
-    },
-    enabled: !!userId
-  });
-
-  const handleRSVP = async (eventId: string) => {
+  const handleRSVP = async (eventId: string, notes?: string) => {
     if (!userId) {
       navigate('/login');
       return;
     }
-    // Handle RSVP logic here
+
+    const { error } = await supabase
+      .from('event_rsvps')
+      .insert({
+        event_id: eventId,
+        user_id: userId,
+        status: 'attending',
+        notes: notes
+      });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to RSVP for the event",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Successfully RSVP'd for the event",
+      });
+    }
   };
 
   const handleChat = async (eventId: string) => {
@@ -141,7 +129,7 @@ const Events = () => {
           {userId && (
             <TabsContent value="organizing">
               <EventsTab 
-                events={organizedEvents || []}
+                events={events?.filter(event => event.creator_id === userId) || []}
                 onRSVP={handleRSVP}
                 onChat={handleChat}
               />
