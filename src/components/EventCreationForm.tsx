@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import {
   Form,
   FormControl,
@@ -13,22 +11,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Calendar as CalendarIcon, MapPin, Text, Ticket, User, Upload } from "lucide-react";
-import { format } from "date-fns";
+import { MapPin, Text } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-
-interface EventFormData {
-  title: string;
-  description: string;
-  location: string;
-  startTime: Date;
-  endTime: Date;
-  maxAttendees: number;
-  requireApproval: boolean;
-  isPrivate: boolean;
-}
+import { EventCoverUpload } from "./event-creation/EventCoverUpload";
+import { EventDateTimeSection } from "./event-creation/EventDateTimeSection";
+import { EventOptionsSection } from "./event-creation/EventOptionsSection";
+import { EventFormData } from "./event-creation/types";
 
 const EventCreationForm = () => {
   const [imageUrl, setImageUrl] = useState<string>("");
@@ -90,35 +80,6 @@ const EventCreationForm = () => {
     }
   };
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `event-covers/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('event-images')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('event-images')
-        .getPublicUrl(filePath);
-
-      setImageUrl(publicUrl);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to upload image",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#004953] text-white p-6">
       <div className="max-w-4xl mx-auto space-y-8">
@@ -135,27 +96,8 @@ const EventCreationForm = () => {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Event Cover Image */}
-            <div className="relative h-64 bg-opacity-20 bg-white rounded-lg overflow-hidden">
-              {imageUrl ? (
-                <img src={imageUrl} alt="Event cover" className="w-full h-full object-cover" />
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <label className="cursor-pointer flex flex-col items-center">
-                    <Upload className="h-12 w-12 mb-2" />
-                    <span>Upload Cover Image</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageUpload}
-                    />
-                  </label>
-                </div>
-              )}
-            </div>
+            <EventCoverUpload imageUrl={imageUrl} setImageUrl={setImageUrl} />
 
-            {/* Event Name */}
             <FormField
               control={form.control}
               name="title"
@@ -173,56 +115,8 @@ const EventCreationForm = () => {
               )}
             />
 
-            {/* Date and Time */}
-            <div className="grid grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="startTime"
-                render={({ field }) => (
-                  <FormItem className="bg-opacity-20 bg-white p-4 rounded-lg">
-                    <FormLabel className="flex items-center gap-2">
-                      <CalendarIcon className="h-5 w-5" />
-                      Start
-                    </FormLabel>
-                    <FormControl>
-                      <div className="flex items-center gap-4">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          className="rounded-md border"
-                        />
-                      </div>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+            <EventDateTimeSection form={form} />
 
-              <FormField
-                control={form.control}
-                name="endTime"
-                render={({ field }) => (
-                  <FormItem className="bg-opacity-20 bg-white p-4 rounded-lg">
-                    <FormLabel className="flex items-center gap-2">
-                      <CalendarIcon className="h-5 w-5" />
-                      End
-                    </FormLabel>
-                    <FormControl>
-                      <div className="flex items-center gap-4">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          className="rounded-md border"
-                        />
-                      </div>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Location */}
             <FormField
               control={form.control}
               name="location"
@@ -244,7 +138,6 @@ const EventCreationForm = () => {
               )}
             />
 
-            {/* Description */}
             <FormField
               control={form.control}
               name="description"
@@ -266,54 +159,7 @@ const EventCreationForm = () => {
               )}
             />
 
-            {/* Event Options */}
-            <div className="space-y-4">
-              <h3 className="text-xl font-semibold">Event Options</h3>
-              
-              <div className="bg-opacity-20 bg-white p-4 rounded-lg space-y-4">
-                {/* Require Approval */}
-                <FormField
-                  control={form.control}
-                  name="requireApproval"
-                  render={({ field }) => (
-                    <FormItem className="flex justify-between items-center">
-                      <FormLabel className="flex items-center gap-2">
-                        <Ticket className="h-5 w-5" />
-                        Require Approval
-                      </FormLabel>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                {/* Max Attendees */}
-                <FormField
-                  control={form.control}
-                  name="maxAttendees"
-                  render={({ field }) => (
-                    <FormItem className="flex justify-between items-center">
-                      <FormLabel className="flex items-center gap-2">
-                        <User className="h-5 w-5" />
-                        Capacity
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          className="w-32 bg-transparent"
-                          placeholder="Unlimited"
-                          {...field}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
+            <EventOptionsSection form={form} />
 
             <Button type="submit" className="w-full">
               Create Event
