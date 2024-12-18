@@ -1,17 +1,18 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Users, MessageSquare } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { EventsTab } from "@/components/events/EventsTab";
+import { Event } from "@/components/events/types";
+import { useToast } from "@/components/ui/use-toast";
 
 const Events = () => {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  // Check authentication status
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUserId(session?.user?.id || null);
@@ -28,16 +29,28 @@ const Events = () => {
   const { data: events, isLoading } = useQuery({
     queryKey: ['events'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First get all events
+      const { data: eventsData, error: eventsError } = await supabase
         .from('events')
         .select(`
           *,
-          event_rsvps!inner(user_id, status)
+          event_rsvps (
+            user_id,
+            status
+          )
         `)
         .order('start_time', { ascending: true });
 
-      if (error) throw error;
-      return data;
+      if (eventsError) {
+        toast({
+          title: "Error fetching events",
+          description: eventsError.message,
+          variant: "destructive",
+        });
+        return [];
+      }
+
+      return eventsData as Event[];
     }
   });
 
@@ -52,7 +65,15 @@ const Events = () => {
         .eq('creator_id', userId)
         .order('start_time', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        toast({
+          title: "Error fetching organized events",
+          description: error.message,
+          variant: "destructive",
+        });
+        return [];
+      }
+
       return data;
     },
     enabled: !!userId
@@ -91,126 +112,39 @@ const Events = () => {
             {userId && <TabsTrigger value="organizing">My Events</TabsTrigger>}
           </TabsList>
 
-          <TabsContent value="browse" className="space-y-6">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {isLoading ? (
-                <p>Loading events...</p>
-              ) : (
-                events?.map((event) => (
-                  <Card key={event.id} className="hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <CardTitle>{event.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-gray-500" />
-                          <span>{new Date(event.start_time).toLocaleDateString()}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-gray-500" />
-                          <span>{event.max_attendees ? `${event.max_attendees} max` : 'Unlimited'}</span>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="outline" 
-                            className="flex-1"
-                            onClick={() => handleRSVP(event.id)}
-                          >
-                            RSVP
-                          </Button>
-                          <Button 
-                            variant="outline"
-                            className="flex-1"
-                            onClick={() => handleChat(event.id)}
-                          >
-                            <MessageSquare className="h-4 w-4 mr-2" />
-                            Chat
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
+          <TabsContent value="browse">
+            {isLoading ? (
+              <p>Loading events...</p>
+            ) : (
+              <EventsTab 
+                events={events || []}
+                onRSVP={handleRSVP}
+                onChat={handleChat}
+              />
+            )}
           </TabsContent>
 
           {userId && (
-            <TabsContent value="attending" className="space-y-6">
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {events?.filter(event => 
-                  event.event_rsvps.some(rsvp => 
+            <TabsContent value="attending">
+              <EventsTab 
+                events={(events || []).filter(event => 
+                  event.event_rsvps?.some(rsvp => 
                     rsvp.user_id === userId && rsvp.status === 'attending'
                   )
-                ).map((event) => (
-                  <Card key={event.id} className="hover:shadow-lg transition-shadow">
-                    {/* Similar card content as above */}
-                    <CardHeader>
-                      <CardTitle>{event.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-gray-500" />
-                          <span>{new Date(event.start_time).toLocaleDateString()}</span>
-                        </div>
-                        <Button 
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => handleChat(event.id)}
-                        >
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          Chat
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                )}
+                onRSVP={handleRSVP}
+                onChat={handleChat}
+              />
             </TabsContent>
           )}
 
           {userId && (
-            <TabsContent value="organizing" className="space-y-6">
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {organizedEvents?.map((event) => (
-                  <Card key={event.id} className="hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <CardTitle>{event.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-gray-500" />
-                          <span>{new Date(event.start_time).toLocaleDateString()}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-gray-500" />
-                          <span>{event.max_attendees ? `${event.max_attendees} max` : 'Unlimited'}</span>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="outline"
-                            className="flex-1"
-                            onClick={() => navigate(`/events/${event.id}/manage`)}
-                          >
-                            Manage
-                          </Button>
-                          <Button 
-                            variant="outline"
-                            className="flex-1"
-                            onClick={() => handleChat(event.id)}
-                          >
-                            <MessageSquare className="h-4 w-4 mr-2" />
-                            Chat
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+            <TabsContent value="organizing">
+              <EventsTab 
+                events={organizedEvents || []}
+                onRSVP={handleRSVP}
+                onChat={handleChat}
+              />
             </TabsContent>
           )}
         </Tabs>
