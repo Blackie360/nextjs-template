@@ -1,11 +1,16 @@
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState(null);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   const isHomePage = location.pathname === '/';
   const navLinks = isHomePage
@@ -19,6 +24,29 @@ export const Navbar = () => {
         { href: "/events", label: "Events" },
         { href: "/settings", label: "Settings" },
       ];
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user || null);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast({
+      title: "Logged out successfully",
+      duration: 2000,
+    });
+    navigate('/');
+  };
 
   return (
     <nav className="fixed w-full bg-white/80 backdrop-blur-md z-50 border-b">
@@ -53,12 +81,14 @@ export const Navbar = () => {
                 </Link>
               )
             ))}
-            {isHomePage ? (
-              <Link to="/dashboard">
-                <Button variant="default">Get Started</Button>
-              </Link>
+            {user ? (
+              <Button variant="outline" onClick={handleLogout}>
+                Logout
+              </Button>
             ) : (
-              <Button variant="default">Create Event</Button>
+              <Link to="/login">
+                <Button variant="default">Sign In</Button>
+              </Link>
             )}
           </div>
 
@@ -100,16 +130,16 @@ export const Navbar = () => {
               )
             ))}
             <div className="px-3 py-2">
-              {isHomePage ? (
-                <Link to="/dashboard">
+              {user ? (
+                <Button className="w-full" variant="outline" onClick={handleLogout}>
+                  Logout
+                </Button>
+              ) : (
+                <Link to="/login" className="w-full">
                   <Button className="w-full" variant="default">
-                    Get Started
+                    Sign In
                   </Button>
                 </Link>
-              ) : (
-                <Button className="w-full" variant="default">
-                  Create Event
-                </Button>
               )}
             </div>
           </div>
