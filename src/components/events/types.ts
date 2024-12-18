@@ -11,7 +11,13 @@ export interface Event {
   is_private: boolean;
   event_status: string;
   event_type: string;
-  event_rsvps?: Array<{ status: string; user_id: string }>;
+  event_rsvps?: Array<{ 
+    status: string; 
+    user_id: string;
+    is_group_rsvp?: boolean;
+    tickets_count?: number;
+    purchased_for?: string[];
+  }>;
 }
 
 export interface EventsTabProps {

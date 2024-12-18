@@ -2,18 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Users, MessageSquare } from "lucide-react";
 import { Event } from "./types";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { GroupRSVPDialog } from "./GroupRSVPDialog";
 
 interface EventCardProps {
   event: Event;
@@ -22,13 +14,36 @@ interface EventCardProps {
 }
 
 export const EventCard = ({ event, onRSVP, onChat }: EventCardProps) => {
-  const [notes, setNotes] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isGroupRSVPOpen, setIsGroupRSVPOpen] = useState(false);
+  const { toast } = useToast();
+  const [friends, setFriends] = useState([]);
 
-  const handleRSVP = () => {
-    onRSVP(event.id, notes);
-    setIsDialogOpen(false);
-    setNotes("");
+  const fetchFriends = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('friends')
+      .select(`
+        friend:profiles!friends_friend_id_fkey(
+          id,
+          username
+        )
+      `)
+      .eq('user_id', user.id)
+      .eq('status', 'accepted');
+
+    if (error) {
+      console.error('Error fetching friends:', error);
+      return;
+    }
+
+    setFriends(data.map(d => d.friend));
+  };
+
+  const handleGroupRSVP = () => {
+    fetchFriends();
+    setIsGroupRSVPOpen(true);
   };
 
   return (
@@ -47,37 +62,10 @@ export const EventCard = ({ event, onRSVP, onChat }: EventCardProps) => {
             <span>{event.max_attendees ? `${event.max_attendees} max` : 'Unlimited'}</span>
           </div>
           <div className="flex gap-2">
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="flex-1">
-                  RSVP
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>RSVP to {event.title}</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Additional Notes (Optional)</Label>
-                    <Textarea
-                      id="notes"
-                      placeholder="Any dietary restrictions, accessibility requirements, or other notes?"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleRSVP}>
-                    Confirm RSVP
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <Button variant="outline" className="flex-1" onClick={handleGroupRSVP}>
+              <Users className="h-4 w-4 mr-2" />
+              Group RSVP
+            </Button>
             <Button 
               variant="outline"
               className="flex-1"
@@ -88,6 +76,13 @@ export const EventCard = ({ event, onRSVP, onChat }: EventCardProps) => {
             </Button>
           </div>
         </div>
+
+        <GroupRSVPDialog
+          isOpen={isGroupRSVPOpen}
+          onClose={() => setIsGroupRSVPOpen(false)}
+          event={event}
+          friends={friends}
+        />
       </CardContent>
     </Card>
   );

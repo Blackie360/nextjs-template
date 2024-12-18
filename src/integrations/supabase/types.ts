@@ -84,24 +84,33 @@ export type Database = {
           created_at: string
           event_id: string
           id: string
+          is_group_rsvp: boolean | null
           notes: string | null
+          purchased_for: string[] | null
           status: string
+          tickets_count: number | null
           user_id: string
         }
         Insert: {
           created_at?: string
           event_id: string
           id?: string
+          is_group_rsvp?: boolean | null
           notes?: string | null
+          purchased_for?: string[] | null
           status: string
+          tickets_count?: number | null
           user_id: string
         }
         Update: {
           created_at?: string
           event_id?: string
           id?: string
+          is_group_rsvp?: boolean | null
           notes?: string | null
+          purchased_for?: string[] | null
           status?: string
+          tickets_count?: number | null
           user_id?: string
         }
         Relationships: [
