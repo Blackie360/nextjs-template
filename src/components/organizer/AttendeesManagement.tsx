@@ -1,23 +1,63 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface Event {
   id: string;
   title: string;
-  event_rsvps: Array<{
-    user_id: string;
-    status: string;
-  }>;
+}
+
+interface Attendee {
+  user_id: string;
+  status: string;
+  notes: string | null;
+  is_group_rsvp: boolean;
+  tickets_count: number;
+  profile: {
+    username: string | null;
+    email: string | null;
+  };
 }
 
 export const AttendeesManagement = ({ events }: { events: Event[] }) => {
   const [selectedEvent, setSelectedEvent] = useState<string>("");
   const { toast } = useToast();
+
+  const { data: attendees, isLoading } = useQuery({
+    queryKey: ['attendees', selectedEvent],
+    queryFn: async () => {
+      if (!selectedEvent) return [];
+      
+      const { data, error } = await supabase
+        .from('event_rsvps')
+        .select(`
+          user_id,
+          status,
+          notes,
+          is_group_rsvp,
+          tickets_count,
+          profile:profiles(username, email)
+        `)
+        .eq('event_id', selectedEvent);
+
+      if (error) {
+        console.error('Error fetching attendees:', error);
+        toast({
+          title: "Error fetching attendees",
+          description: error.message,
+          variant: "destructive",
+        });
+        return [];
+      }
+
+      return data as Attendee[];
+    },
+    enabled: !!selectedEvent
+  });
 
   const handleStatusChange = async (userId: string, newStatus: string) => {
     const { error } = await supabase
@@ -39,8 +79,6 @@ export const AttendeesManagement = ({ events }: { events: Event[] }) => {
     }
   };
 
-  const selectedEventData = events.find(e => e.id === selectedEvent);
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -59,44 +97,56 @@ export const AttendeesManagement = ({ events }: { events: Event[] }) => {
         </Select>
       </div>
 
-      {selectedEventData && (
+      {selectedEvent && (
         <Card>
           <CardHeader>
             <CardTitle>Attendees List</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User ID</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {selectedEventData.event_rsvps.map((rsvp) => (
-                  <TableRow key={rsvp.user_id}>
-                    <TableCell>{rsvp.user_id}</TableCell>
-                    <TableCell>{rsvp.status}</TableCell>
-                    <TableCell>
-                      <Select
-                        value={rsvp.status}
-                        onValueChange={(value) => handleStatusChange(rsvp.user_id, value)}
-                      >
-                        <SelectTrigger className="w-[150px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="attending">Attending</SelectItem>
-                          <SelectItem value="declined">Declined</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
+            {isLoading ? (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Username</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Tickets</TableHead>
+                    <TableHead>Notes</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {attendees?.map((rsvp) => (
+                    <TableRow key={rsvp.user_id}>
+                      <TableCell>{rsvp.profile.username || 'N/A'}</TableCell>
+                      <TableCell>{rsvp.profile.email || 'N/A'}</TableCell>
+                      <TableCell>{rsvp.status}</TableCell>
+                      <TableCell>{rsvp.tickets_count}</TableCell>
+                      <TableCell>{rsvp.notes || 'No notes'}</TableCell>
+                      <TableCell>
+                        <Select
+                          value={rsvp.status}
+                          onValueChange={(value) => handleStatusChange(rsvp.user_id, value)}
+                        >
+                          <SelectTrigger className="w-[150px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="attending">Attending</SelectItem>
+                            <SelectItem value="declined">Declined</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       )}

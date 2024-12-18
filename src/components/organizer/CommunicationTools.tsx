@@ -5,20 +5,42 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface Event {
   id: string;
   title: string;
-  event_rsvps: Array<{
-    user_id: string;
-    status: string;
-  }>;
 }
 
 export const CommunicationTools = ({ events }: { events: Event[] }) => {
   const [selectedEvent, setSelectedEvent] = useState<string>("");
   const [message, setMessage] = useState<string>("");
   const { toast } = useToast();
+
+  const { data: attendees } = useQuery({
+    queryKey: ['attendees-emails', selectedEvent],
+    queryFn: async () => {
+      if (!selectedEvent) return [];
+      
+      const { data, error } = await supabase
+        .from('event_rsvps')
+        .select(`
+          user_id,
+          status,
+          profile:profiles(email)
+        `)
+        .eq('event_id', selectedEvent)
+        .eq('status', 'attending');
+
+      if (error) {
+        console.error('Error fetching attendees:', error);
+        return [];
+      }
+
+      return data.map(rsvp => rsvp.profile.email).filter(Boolean);
+    },
+    enabled: !!selectedEvent
+  });
 
   const handleSendMessage = async () => {
     if (!selectedEvent || !message.trim()) {
@@ -39,10 +61,12 @@ export const CommunicationTools = ({ events }: { events: Event[] }) => {
 
       if (eventError) throw eventError;
 
+      // Send email to all attendees
       const { error } = await supabase.functions.invoke('send-bulk-message', {
         body: {
           eventId: selectedEvent,
           message: message,
+          emails: attendees,
         },
       });
 
@@ -50,7 +74,7 @@ export const CommunicationTools = ({ events }: { events: Event[] }) => {
 
       toast({
         title: "Success",
-        description: "Message sent successfully",
+        description: "Message sent successfully to all attendees",
       });
 
       setMessage("");
@@ -86,6 +110,12 @@ export const CommunicationTools = ({ events }: { events: Event[] }) => {
               </SelectContent>
             </Select>
           </div>
+
+          {selectedEvent && attendees && (
+            <div className="text-sm text-muted-foreground">
+              Message will be sent to {attendees.length} attendee(s)
+            </div>
+          )}
 
           <Textarea
             placeholder="Enter your message here..."
