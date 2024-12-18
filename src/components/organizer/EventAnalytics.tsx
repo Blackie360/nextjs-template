@@ -8,16 +8,16 @@ interface Event {
     views_count: number;
     registration_count: number;
     attendance_rate: number;
-  } | null;
+  }[];
   event_rsvps: Array<{ status: string }>;
 }
 
 export const EventAnalytics = ({ events }: { events: Event[] }) => {
   const analyticsData = events.map(event => ({
     name: event.title,
-    registrations: event.event_analytics?.registration_count || 0,
-    views: event.event_analytics?.views_count || 0,
-    attendanceRate: event.event_analytics?.attendance_rate || 0
+    registrations: event.event_analytics?.[0]?.registration_count || 0,
+    views: event.event_analytics?.[0]?.views_count || 0,
+    attendanceRate: event.event_analytics?.[0]?.attendance_rate || 0
   }));
 
   return (
@@ -41,7 +41,7 @@ export const EventAnalytics = ({ events }: { events: Event[] }) => {
           <CardContent>
             <p className="text-3xl font-bold">
               {events.reduce((acc, event) => 
-                acc + (event.event_analytics?.registration_count || 0), 0
+                acc + (event.event_analytics?.[0]?.registration_count || 0), 0
               )}
             </p>
           </CardContent>
@@ -54,7 +54,7 @@ export const EventAnalytics = ({ events }: { events: Event[] }) => {
           <CardContent>
             <p className="text-3xl font-bold">
               {Math.round(events.reduce((acc, event) => 
-                acc + (event.event_analytics?.attendance_rate || 0), 0
+                acc + (event.event_analytics?.[0]?.attendance_rate || 0), 0
               ) / events.length || 0)}%
             </p>
           </CardContent>
