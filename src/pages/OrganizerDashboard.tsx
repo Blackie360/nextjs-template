@@ -16,6 +16,7 @@ const OrganizerDashboard = () => {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Current user ID:", session?.user?.id);
       setUserId(session?.user?.id || null);
       if (!session?.user) {
         navigate('/login');
@@ -28,6 +29,7 @@ const OrganizerDashboard = () => {
     queryFn: async () => {
       if (!userId) return [];
       
+      console.log("Fetching events for user:", userId);
       const { data, error } = await supabase
         .from('events')
         .select(`
@@ -46,6 +48,7 @@ const OrganizerDashboard = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
+        console.error("Error fetching events:", error);
         toast({
           title: "Error fetching events",
           description: error.message,
@@ -54,6 +57,7 @@ const OrganizerDashboard = () => {
         return [];
       }
 
+      console.log("Fetched events:", data);
       return data;
     },
     enabled: !!userId
