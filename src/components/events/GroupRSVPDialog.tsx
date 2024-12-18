@@ -8,7 +8,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { Ticket, Users, Plus, Minus } from "lucide-react";
@@ -64,15 +63,36 @@ export const GroupRSVPDialog = ({ isOpen, onClose, event, friends }: GroupRSVPDi
         throw rsvpError;
       }
 
-      // Send confirmation emails
-      await supabase.functions.invoke('send-event-email', {
-        body: {
-          eventId: event.id,
-          userId: user.id,
+      // Send notification to friends
+      const notificationPromises = selectedFriends.map(friend => 
+        supabase.from('notifications').insert({
+          user_id: friend.id,
           type: 'group_rsvp',
-          additionalEmails: selectedFriends.map(f => f.email),
-        },
-      });
+          message: `You've been added to a group RSVP for ${event.title}`,
+        })
+      );
+
+      await Promise.all(notificationPromises);
+
+      // Get event details for the email
+      const { data: eventDetails } = await supabase
+        .from('events')
+        .select('*')
+        .eq('id', event.id)
+        .single();
+
+      if (eventDetails) {
+        // Send email notifications through edge function
+        await supabase.functions.invoke('send-event-email', {
+          body: {
+            eventId: event.id,
+            userId: user.id,
+            type: 'group_rsvp',
+            eventDetails,
+            attendees: selectedFriends.map(f => f.id)
+          },
+        });
+      }
 
       toast({
         title: "Success",
