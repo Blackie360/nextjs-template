@@ -17,10 +17,8 @@ interface Attendee {
   notes: string | null;
   is_group_rsvp: boolean;
   tickets_count: number;
-  profile: {
-    username: string | null;
-    email: string | null;
-  };
+  username: string | null;
+  email: string | null;
 }
 
 export const AttendeesManagement = ({ events }: { events: Event[] }) => {
@@ -33,15 +31,8 @@ export const AttendeesManagement = ({ events }: { events: Event[] }) => {
       if (!selectedEvent) return [];
       
       const { data, error } = await supabase
-        .from('event_rsvps')
-        .select(`
-          user_id,
-          status,
-          notes,
-          is_group_rsvp,
-          tickets_count,
-          profile:profiles(username, email)
-        `)
+        .from('rsvp_details')
+        .select('*')
         .eq('event_id', selectedEvent);
 
       if (error) {
@@ -122,8 +113,8 @@ export const AttendeesManagement = ({ events }: { events: Event[] }) => {
                 <TableBody>
                   {attendees?.map((rsvp) => (
                     <TableRow key={rsvp.user_id}>
-                      <TableCell>{rsvp.profile.username || 'N/A'}</TableCell>
-                      <TableCell>{rsvp.profile.email || 'N/A'}</TableCell>
+                      <TableCell>{rsvp.username || 'N/A'}</TableCell>
+                      <TableCell>{rsvp.email || 'N/A'}</TableCell>
                       <TableCell>{rsvp.status}</TableCell>
                       <TableCell>{rsvp.tickets_count}</TableCell>
                       <TableCell>{rsvp.notes || 'No notes'}</TableCell>

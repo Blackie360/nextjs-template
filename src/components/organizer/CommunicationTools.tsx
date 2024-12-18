@@ -23,12 +23,8 @@ export const CommunicationTools = ({ events }: { events: Event[] }) => {
       if (!selectedEvent) return [];
       
       const { data, error } = await supabase
-        .from('event_rsvps')
-        .select(`
-          user_id,
-          status,
-          profile:profiles(email)
-        `)
+        .from('rsvp_details')
+        .select('email')
         .eq('event_id', selectedEvent)
         .eq('status', 'attending');
 
@@ -37,7 +33,7 @@ export const CommunicationTools = ({ events }: { events: Event[] }) => {
         return [];
       }
 
-      return data.map(rsvp => rsvp.profile.email).filter(Boolean);
+      return data.map(rsvp => rsvp.email).filter(Boolean);
     },
     enabled: !!selectedEvent
   });
@@ -53,15 +49,6 @@ export const CommunicationTools = ({ events }: { events: Event[] }) => {
     }
 
     try {
-      const { data: eventData, error: eventError } = await supabase
-        .from('events')
-        .select('*')
-        .eq('id', selectedEvent)
-        .single();
-
-      if (eventError) throw eventError;
-
-      // Send email to all attendees
       const { error } = await supabase.functions.invoke('send-bulk-message', {
         body: {
           eventId: selectedEvent,
