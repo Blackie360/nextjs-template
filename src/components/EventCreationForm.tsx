@@ -35,6 +35,7 @@ const EventCreationForm = () => {
       maxAttendees: 0,
       requireApproval: false,
       isPrivate: false,
+      locationType: 'physical',
     },
   });
 
@@ -52,16 +53,20 @@ const EventCreationForm = () => {
         return;
       }
 
-      const { error } = await supabase.from("events").insert({
+      const eventData = {
         title: data.title,
         description: data.description,
-        location: data.location,
+        location: data.locationType === 'physical' ? data.location : null,
         start_time: data.startTime.toISOString(),
         end_time: data.endTime.toISOString(),
         max_attendees: data.maxAttendees || null,
         creator_id: user.id,
         is_private: data.isPrivate,
-      });
+        meeting_link: data.locationType === 'virtual' ? data.meetingLink : null,
+        event_type: data.locationType,
+      };
+
+      const { error } = await supabase.from("events").insert(eventData);
 
       if (error) throw error;
 
@@ -70,7 +75,7 @@ const EventCreationForm = () => {
         description: "Event created successfully",
       });
       
-      navigate("/events");
+      navigate("/organizer");
     } catch (error) {
       toast({
         title: "Error",
@@ -118,26 +123,7 @@ const EventCreationForm = () => {
 
             <EventDateTimeSection form={form} />
 
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem className="bg-white/20 p-4 rounded-lg">
-                  <FormLabel className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5" />
-                    Add Event Location
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Offline location or virtual link"
-                      className="bg-transparent border-none"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <EventOptionsSection form={form} />
 
             <FormField
               control={form.control}
@@ -159,8 +145,6 @@ const EventCreationForm = () => {
                 </FormItem>
               )}
             />
-
-            <EventOptionsSection form={form} />
 
             <Button type="submit" className="w-full bg-white/20 hover:bg-white/30">
               Create Event

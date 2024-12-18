@@ -7,4 +7,7 @@ export interface EventFormData {
   maxAttendees: number;
   requireApproval: boolean;
   isPrivate: boolean;
+  locationType: 'physical' | 'virtual';
+  meetingPlatform?: 'zoom' | 'meet' | 'teams' | 'other';
+  meetingLink?: string;
 }
