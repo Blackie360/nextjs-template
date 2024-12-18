@@ -11,7 +11,7 @@ interface EventDateTimeSectionProps {
 export const EventDateTimeSection = ({ form }: EventDateTimeSectionProps) => {
   return (
     <div className="bg-white/20 p-4 rounded-lg space-y-4">
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField
           control={form.control}
           name="startTime"
@@ -27,7 +27,7 @@ export const EventDateTimeSection = ({ form }: EventDateTimeSectionProps) => {
                     mode="single"
                     selected={field.value}
                     onSelect={field.onChange}
-                    className="rounded-md border bg-white/10"
+                    className="rounded-md border bg-white/10 w-full"
                   />
                 </div>
               </FormControl>
@@ -50,7 +50,7 @@ export const EventDateTimeSection = ({ form }: EventDateTimeSectionProps) => {
                     mode="single"
                     selected={field.value}
                     onSelect={field.onChange}
-                    className="rounded-md border bg-white/10"
+                    className="rounded-md border bg-white/10 w-full"
                   />
                 </div>
               </FormControl>
@@ -60,7 +60,7 @@ export const EventDateTimeSection = ({ form }: EventDateTimeSectionProps) => {
       </div>
       
       <div className="flex justify-end">
-        <div className="bg-white/20 px-4 py-2 rounded-lg flex items-center gap-2">
+        <div className="w-full sm:w-auto bg-white/20 px-4 py-2 rounded-lg flex items-center gap-2 justify-center">
           <Globe className="h-4 w-4" />
           <span>GMT+03:00 Nairobi</span>
         </div>

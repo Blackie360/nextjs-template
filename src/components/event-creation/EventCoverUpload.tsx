@@ -41,14 +41,14 @@ export const EventCoverUpload = ({ imageUrl, setImageUrl }: EventCoverUploadProp
   };
 
   return (
-    <div className="relative h-64 bg-white/20 rounded-lg overflow-hidden">
+    <div className="relative h-48 sm:h-64 bg-white/20 rounded-lg overflow-hidden">
       {imageUrl ? (
         <img src={imageUrl} alt="Event cover" className="w-full h-full object-cover" />
       ) : (
         <div className="flex items-center justify-center h-full">
-          <label className="cursor-pointer flex flex-col items-center">
-            <Upload className="h-12 w-12 mb-2" />
-            <span>Upload Cover Image</span>
+          <label className="cursor-pointer flex flex-col items-center p-4 text-center">
+            <Upload className="h-8 sm:h-12 w-8 sm:w-12 mb-2" />
+            <span className="text-sm sm:text-base">Upload Cover Image</span>
             <input
               type="file"
               accept="image/*"
