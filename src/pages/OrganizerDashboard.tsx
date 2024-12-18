@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EventAnalytics } from "@/components/organizer/EventAnalytics";
 import { EventManagement } from "@/components/organizer/EventManagement";
@@ -8,10 +7,12 @@ import { AttendeesManagement } from "@/components/organizer/AttendeesManagement"
 import { CommunicationTools } from "@/components/organizer/CommunicationTools";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
 
 const OrganizerDashboard = () => {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -22,10 +23,11 @@ const OrganizerDashboard = () => {
     });
   }, [navigate]);
 
-  const { data: events, isLoading: eventsLoading } = useQuery({
+  const { data: events, isLoading } = useQuery({
     queryKey: ['organizer-events', userId],
     queryFn: async () => {
       if (!userId) return [];
+      
       const { data, error } = await supabase
         .from('events')
         .select(`
@@ -43,14 +45,26 @@ const OrganizerDashboard = () => {
         .eq('creator_id', userId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        toast({
+          title: "Error fetching events",
+          description: error.message,
+          variant: "destructive",
+        });
+        return [];
+      }
+
       return data;
     },
     enabled: !!userId
   });
 
-  if (eventsLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   return (
