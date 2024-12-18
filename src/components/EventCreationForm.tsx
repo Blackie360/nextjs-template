@@ -11,7 +11,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { MapPin, Text } from "lucide-react";
+import { MapPin, Text, Globe } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -81,17 +81,18 @@ const EventCreationForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#004953] text-white p-6">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen bg-[#004953] text-white">
+      <div className="max-w-4xl mx-auto p-6 space-y-8">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-4">
-            <div className="bg-opacity-20 bg-white px-4 py-2 rounded-lg">
+            <button className="bg-white/20 px-4 py-2 rounded-lg flex items-center gap-2">
               <span>Personal Calendar</span>
-            </div>
+            </button>
           </div>
-          <div className="bg-opacity-20 bg-white px-4 py-2 rounded-lg">
+          <button className="bg-white/20 px-4 py-2 rounded-lg flex items-center gap-2">
+            <Globe className="h-4 w-4" />
             <span>Public</span>
-          </div>
+          </button>
         </div>
 
         <Form {...form}>
@@ -121,14 +122,14 @@ const EventCreationForm = () => {
               control={form.control}
               name="location"
               render={({ field }) => (
-                <FormItem className="bg-opacity-20 bg-white p-4 rounded-lg">
+                <FormItem className="bg-white/20 p-4 rounded-lg">
                   <FormLabel className="flex items-center gap-2">
                     <MapPin className="h-5 w-5" />
-                    Location
+                    Add Event Location
                   </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Add Event Location"
+                      placeholder="Offline location or virtual link"
                       className="bg-transparent border-none"
                       {...field}
                     />
@@ -142,15 +143,15 @@ const EventCreationForm = () => {
               control={form.control}
               name="description"
               render={({ field }) => (
-                <FormItem className="bg-opacity-20 bg-white p-4 rounded-lg">
+                <FormItem className="bg-white/20 p-4 rounded-lg">
                   <FormLabel className="flex items-center gap-2">
                     <Text className="h-5 w-5" />
-                    Description
+                    Add Description
                   </FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Add Description"
-                      className="bg-transparent border-none resize-none"
+                      placeholder="What's this event about?"
+                      className="bg-transparent border-none resize-none min-h-[100px]"
                       {...field}
                     />
                   </FormControl>
@@ -161,7 +162,7 @@ const EventCreationForm = () => {
 
             <EventOptionsSection form={form} />
 
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full bg-white/20 hover:bg-white/30">
               Create Event
             </Button>
           </form>

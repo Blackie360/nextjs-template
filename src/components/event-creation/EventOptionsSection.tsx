@@ -1,7 +1,7 @@
 import { FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Ticket, User } from "lucide-react";
+import { Ticket, Users } from "lucide-react";
 import { UseFormReturn } from "react-hook-form";
 import { EventFormData } from "./types";
 
@@ -14,7 +14,7 @@ export const EventOptionsSection = ({ form }: EventOptionsSectionProps) => {
     <div className="space-y-4">
       <h3 className="text-xl font-semibold">Event Options</h3>
       
-      <div className="bg-opacity-20 bg-white p-4 rounded-lg space-y-4">
+      <div className="bg-white/20 p-4 rounded-lg space-y-4">
         <FormField
           control={form.control}
           name="requireApproval"
@@ -40,7 +40,7 @@ export const EventOptionsSection = ({ form }: EventOptionsSectionProps) => {
           render={({ field }) => (
             <FormItem className="flex justify-between items-center">
               <FormLabel className="flex items-center gap-2">
-                <User className="h-5 w-5" />
+                <Users className="h-5 w-5" />
                 Capacity
               </FormLabel>
               <FormControl>

@@ -41,7 +41,7 @@ export const EventCoverUpload = ({ imageUrl, setImageUrl }: EventCoverUploadProp
   };
 
   return (
-    <div className="relative h-64 bg-opacity-20 bg-white rounded-lg overflow-hidden">
+    <div className="relative h-64 bg-white/20 rounded-lg overflow-hidden">
       {imageUrl ? (
         <img src={imageUrl} alt="Event cover" className="w-full h-full object-cover" />
       ) : (
