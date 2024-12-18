@@ -11,6 +11,7 @@ import Events from "./pages/Events";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import { Navbar } from "./components/Navbar";
+import OrganizerDashboard from "./pages/OrganizerDashboard";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +75,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/organizer"
+            element={
+              <ProtectedRoute>
+                <OrganizerDashboard />
               </ProtectedRoute>
             }
           />

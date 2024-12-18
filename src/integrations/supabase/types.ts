@@ -41,6 +41,44 @@ export type Database = {
           },
         ]
       }
+      event_analytics: {
+        Row: {
+          attendance_rate: number | null
+          created_at: string | null
+          event_id: string | null
+          id: string
+          registration_count: number | null
+          updated_at: string | null
+          views_count: number | null
+        }
+        Insert: {
+          attendance_rate?: number | null
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          registration_count?: number | null
+          updated_at?: string | null
+          views_count?: number | null
+        }
+        Update: {
+          attendance_rate?: number | null
+          created_at?: string | null
+          event_id?: string | null
+          id?: string
+          registration_count?: number | null
+          updated_at?: string | null
+          views_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_analytics_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_rsvps: {
         Row: {
           created_at: string
@@ -79,11 +117,14 @@ export type Database = {
           creator_id: string
           description: string | null
           end_time: string
+          event_status: string | null
+          event_type: string | null
           id: string
           is_private: boolean | null
           location: string | null
           max_attendees: number | null
           meeting_link: string | null
+          registration_deadline: string | null
           start_time: string
           title: string
         }
@@ -92,11 +133,14 @@ export type Database = {
           creator_id: string
           description?: string | null
           end_time: string
+          event_status?: string | null
+          event_type?: string | null
           id?: string
           is_private?: boolean | null
           location?: string | null
           max_attendees?: number | null
           meeting_link?: string | null
+          registration_deadline?: string | null
           start_time: string
           title: string
         }
@@ -105,11 +149,14 @@ export type Database = {
           creator_id?: string
           description?: string | null
           end_time?: string
+          event_status?: string | null
+          event_type?: string | null
           id?: string
           is_private?: boolean | null
           location?: string | null
           max_attendees?: number | null
           meeting_link?: string | null
+          registration_deadline?: string | null
           start_time?: string
           title?: string
         }
@@ -215,7 +262,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_event_capacity_status: {
+        Args: {
+          event_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
