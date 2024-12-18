@@ -68,7 +68,14 @@ const EventCreationForm = () => {
 
       const { error } = await supabase.from("events").insert(eventData);
 
-      if (error) throw error;
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
 
       toast({
         title: "Success",
