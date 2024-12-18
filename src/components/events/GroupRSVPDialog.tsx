@@ -83,7 +83,7 @@ export const GroupRSVPDialog = ({ isOpen, onClose, event, friends }: GroupRSVPDi
 
       if (eventDetails) {
         // Send email notifications through edge function
-        await supabase.functions.invoke('send-event-email', {
+        const { error: emailError } = await supabase.functions.invoke('send-event-email', {
           body: {
             eventId: event.id,
             userId: user.id,
@@ -92,12 +92,21 @@ export const GroupRSVPDialog = ({ isOpen, onClose, event, friends }: GroupRSVPDi
             attendees: selectedFriends.map(f => f.id)
           },
         });
-      }
 
-      toast({
-        title: "Success",
-        description: "Group RSVP confirmed!",
-      });
+        if (emailError) {
+          console.error('Error sending email:', emailError);
+          toast({
+            title: "Note",
+            description: "RSVP confirmed but there was an issue sending email notifications",
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "Success",
+            description: "RSVP confirmed and email notifications sent!",
+          });
+        }
+      }
 
       onClose();
     } catch (error: any) {
