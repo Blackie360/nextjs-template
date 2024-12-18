@@ -1,5 +1,8 @@
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Event {
   id: string;
@@ -13,6 +16,33 @@ interface Event {
 }
 
 export const EventAnalytics = ({ events }: { events: Event[] }) => {
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('analytics-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'event_analytics'
+        },
+        (payload) => {
+          console.log('Analytics update received:', payload);
+          toast({
+            title: "Analytics Updated",
+            description: "Event analytics have been updated in real-time.",
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [toast]);
+
   const analyticsData = events.map(event => ({
     name: event.title,
     registrations: event.event_analytics?.[0]?.registration_count || 0,
